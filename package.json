@@ -6,7 +6,7 @@
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "homepage": "https://search.roozna.com",
-  "repository": "https://github.com/roozna/roozna-react-search",
+  "repository": "https://github.com/roozna/react-search",
   "author": "Roozna",
   "files": [
     "dist"
