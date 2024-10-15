@@ -8,6 +8,15 @@ const getInitials = (name: string) => {
   return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
 };
 
+const getDomainName = (url: string): string => {
+  try {
+    const domain = new URL(url).hostname;
+    return domain.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+};
+
 export function Searchbar({ 
   apiKey, 
   onSelect,
@@ -248,6 +257,7 @@ export function Searchbar({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span
                       style={{
+                        flexShrink: 0,
                         position: 'relative',
                         display: 'inline-block',
                         width: '1.5rem',
@@ -287,14 +297,44 @@ export function Searchbar({
                         </span>
                       )}
                     </span>
-                    <span style={{ fontWeight: '500', color: '#111827', fontSize: '0.875rem' }}>{company.name}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{company.website.split('://')[1]}</span>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      overflow: 'hidden',
+                      flexGrow: 1,
+                    }}>
+                      <span style={{ 
+                        fontWeight: '500', 
+                        color: '#111827', 
+                        fontSize: '0.875rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}>
+                        {company.name}
+                      </span>
+                      <span style={{ 
+                        fontSize: '0.75rem', 
+                        color: '#6B7280', 
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}>
+                        {getDomainName(company.website)}
+                      </span>
+                    </div>
                     {(selectedCompany?.id === company.id || hoveredCompany === company.id.toString()) && (
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 20 20"
                         fill="currentColor"
-                        style={{ width: '1.25rem', height: '1.25rem', color: mainColor, marginLeft: 'auto' }}
+                        style={{ 
+                          width: '1.25rem', 
+                          height: '1.25rem', 
+                          color: mainColor, 
+                          marginLeft: 'auto',
+                          flexShrink: 0,
+                        }}
                         aria-hidden="true"
                       >
                         <path
@@ -316,24 +356,6 @@ export function Searchbar({
         </div>
       )}
     </div>
-
-
-
-    {selectedCompany && (
-        <div style={{
-          marginTop: '1rem',
-          padding: '1rem',
-          border: '1px solid #E5E7EB',
-          borderRadius: '0.5rem',
-          backgroundColor: '#F9FAFB',
-          color: '#111827',
-        }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>Selected Company Details</h3>
-          <p><strong>Name:</strong> {selectedCompany.name}</p>
-          <p><strong>Website:</strong> {selectedCompany.website}</p>
-          {/* Add more details as needed */}
-        </div>
-      )}
     </>
   );
 }

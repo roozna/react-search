@@ -5,7 +5,7 @@ const API_URL = 'https://api.roozna.com/v1/search';
 export async function searchCompanies(apiKey: string, query: string, page: number = 1): Promise<Company[]> {
     const response = await fetch(`${API_URL}?q=${encodeURIComponent(query)}&page=${page}`, {
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'x-api-key': apiKey,
       },
     });
   
