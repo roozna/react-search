@@ -22,7 +22,42 @@ export interface Company {
     image: string;
   }
   
-  export type SearchbarSize = 'small' | 'medium' | 'large';
+  export type SearchbarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+
+export interface SearchbarStyles {
+  container?: React.CSSProperties;
+  label?: React.CSSProperties;
+  inputContainer?: React.CSSProperties;
+  input?: React.CSSProperties;
+  dropdown?: React.CSSProperties;
+  dropdownInner?: React.CSSProperties;
+  dropdownItem?: React.CSSProperties;
+  loadingContainer?: React.CSSProperties;
+  spinner?: React.CSSProperties;
+  noResults?: React.CSSProperties;
+  gradientOverlay?: React.CSSProperties;
+  companyInfo?: React.CSSProperties;
+  companyLogo?: React.CSSProperties;
+  companyImage?: React.CSSProperties;
+  companyInitials?: React.CSSProperties;
+  companyTextInfo?: React.CSSProperties;
+  companyName?: React.CSSProperties;
+  companyWebsite?: React.CSSProperties;
+  checkIcon?: React.CSSProperties;
+  dropdownContainer?: React.CSSProperties;
+}
+
+export type ThemeMode = 'light' | 'dark';
+
+export interface Theme {
+  backgroundColor: string;
+  textColor: string;
+  borderColor: string;
+  hoverColor: string;
+  placeholderColor: string;
+  scrollbarTrackColor: string;
+  scrollbarThumbColor: string;
+}
 
 export interface SearchbarProps {
     apiKey: string;
@@ -31,29 +66,10 @@ export interface SearchbarProps {
     placeholderText?: string;
     labelText?: string;
     size?: SearchbarSize;
-    customStyles?: Partial<SearchbarStyles>;
-}
-
-export interface SearchbarStyles {
-    container: React.CSSProperties;
-    label: React.CSSProperties;
-    inputWrapper: React.CSSProperties;
-    input: React.CSSProperties;
-    searchIcon: React.CSSProperties;
-    dropdownIcon: React.CSSProperties;
-    dropdown: React.CSSProperties;
-    dropdownInner: React.CSSProperties;
-    dropdownItem: React.CSSProperties;
-    dropdownItemHover: React.CSSProperties;
-    companyInfo: React.CSSProperties;
-    companyLogo: React.CSSProperties;
-    companyImage: React.CSSProperties;
-    companyInitials: React.CSSProperties;
-    companyTextInfo: React.CSSProperties;
-    companyName: React.CSSProperties;
-    companyWebsite: React.CSSProperties;
-    checkIcon: React.CSSProperties;
-    loadingContainer: React.CSSProperties;
-    spinner: React.CSSProperties;
-    noResults: React.CSSProperties;
+    width?: string;
+    styles?: Partial<SearchbarStyles>;
+    openByDefault?: boolean;
+    theme?: ThemeMode;
+    lightTheme?: Partial<Theme>;
+    darkTheme?: Partial<Theme>;
 }
