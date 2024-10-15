@@ -3,7 +3,12 @@ name: Release
 on:
   push:
     branches:
-      - main  # Change this to the branch you'd like to trigger releases
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   release:
@@ -11,18 +16,21 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20.8.1'  # Update to >= 20.8.1
+          node-version: '20.8.1'
           registry-url: 'https://npm.pkg.github.com'
 
       - name: Install dependencies
         run: npm ci
 
       - name: Run Semantic Release
-        run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release
