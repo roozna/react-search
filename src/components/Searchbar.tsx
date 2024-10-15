@@ -1,10 +1,11 @@
 import React, { useRef, useEffect, useState, KeyboardEvent } from 'react';
-import { Company, SearchbarProps } from '../types';
+import { Company, SearchbarProps, SearchbarSize } from '../types';
 import { useSearchbar } from '../hooks/useSearchbar';
 import { searchCompanies } from '../utils/api';
+import { getSearchbarStyles } from '../styles/searchbarStyles';
 import './Searchbar.css';
 
-const getInitials = (name: string) => {
+const getInitials = (name: string): string => {
   return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
 };
 
@@ -22,7 +23,9 @@ export function Searchbar({
   onSelect,
   mainColor = '#8B5CF6',
   placeholderText = 'Search companies...',
-  labelText = 'Company name*'
+  labelText = 'Company name*',
+  size = 'medium',
+  customStyles = {}
 }: SearchbarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -45,6 +48,8 @@ export function Searchbar({
     2,
     300
   );
+
+  const styles = getSearchbarStyles(size, mainColor, customStyles);
 
   const handleSelect = (company: Company) => {
     setSelectedCompany(company);
@@ -87,154 +92,72 @@ export function Searchbar({
     setFocusedIndex(-1);
   }, [companies]);
 
-  const getLighterColor = (color: string, factor: number = 0.2): string => {
-    const hex = color.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-    
-    return `rgba(${r}, ${g}, ${b}, ${factor})`;
-  };
-
-  // Add this CSS class to your Searchbar.css file
-  const spinnerStyle = `
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .spinner {
-      border: 2px solid #f3f3f3;
-      border-top: 2px solid ${mainColor};
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      animation: spin 1s linear infinite;
-    }
-  `;
-
   return (
-    <>
-    <div style={{ width: '100%', position: 'relative', maxWidth: '25rem' }}>
-      <style>{spinnerStyle}</style>
-      <label
-        htmlFor="company-search"
-        style={{
-          display: 'block',
-          textAlign: 'left',
-          marginBottom: '0.375rem',
-          fontSize: '0.875rem',
-          fontWeight: '500',
-          color: '#374151',
-        }}
-      >
+    <div style={styles.container}>
+      <label htmlFor="company-search" style={styles.label}>
         {labelText}
       </label>
-      <div
-        style={{
-          position: 'relative',
-          width: '100%',
-          borderRadius: '0.5rem',
-          border: isFocused ? `1px solid ${mainColor}` : '1px solid #E5E7EB',
-          backgroundColor: '#FFFFFF',
-          boxShadow: isFocused ? `0 0 0 4px ${getLighterColor(mainColor)}` : '0 1px 2px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          alignItems: 'center',
-          maxWidth: '25rem',
-          transition: 'border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-        }}
-      >
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          width: '100%',
-          padding: '0.625rem 0.875rem',
-        }}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            style={{ width: '1.25rem', height: '1.25rem', color: '#6B7280', marginRight: '0.5rem' }}
-            aria-hidden="true"
-          >
-            <path
-              fillRule="evenodd"
-              d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <input
-            id="company-search"
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => {
-              setIsOpen(true);
-              setIsFocused(true);
-            }}
-            onBlur={() => setIsFocused(false)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholderText}
-            aria-label={placeholderText}
-            aria-autocomplete="list"
-            aria-controls="company-list"
-            aria-expanded={isOpen}
-            style={{
-              flex: 1,
-              border: 'none',
-              outline: 'none',
-              backgroundColor: 'transparent',
-              fontSize: '0.875rem',
-              color: '#111827',
-            }}
+      <div style={styles.inputWrapper}>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          style={styles.searchIcon}
+          aria-hidden="true"
+        >
+          <path
+            fillRule="evenodd"
+            d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+            clipRule="evenodd"
           />
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            style={{
-              width: '1.25rem',
-              height: '1.25rem',
-              color: '#6B7280',
-              marginLeft: '0.5rem',
-              transform: isOpen ? 'rotate(180deg)' : 'none',
-              transition: 'transform 0.2s ease-in-out',
-            }}
-            aria-hidden="true"
-          >
-            <path
-              fillRule="evenodd"
-              d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </div>
+        </svg>
+        <input
+          id="company-search"
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => {
+            setIsOpen(true);
+            setIsFocused(true);
+          }}
+          onBlur={() => setIsFocused(false)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholderText}
+          aria-label={placeholderText}
+          aria-autocomplete="list"
+          aria-controls="company-list"
+          aria-expanded={isOpen}
+          style={styles.input}
+        />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          style={{
+            ...styles.dropdownIcon,
+            transform: isOpen ? 'rotate(180deg)' : 'none',
+          }}
+          aria-hidden="true"
+        >
+          <path
+            fillRule="evenodd"
+            d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+            clipRule="evenodd"
+          />
+        </svg>
       </div>
       {isOpen && (
         <div
           id="company-list"
           ref={dropdownRef}
           role="listbox"
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            marginTop: '0.5rem',
-            maxHeight: '13rem',
-            overflowY: 'auto',
-            backgroundColor: '#FFFFFF',
-            borderRadius: '0.5rem',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            zIndex: 50,
-            border: '1px solid #E5E7EB',
-            padding: '0.375rem',
-          }}
+          style={styles.dropdown}
         >
-          <div style={{ padding: '0.375rem' }}>
+          <div style={styles.dropdownInner}>
             {loading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
-                <div className="spinner" />
+              <div style={styles.loadingContainer}>
+                <div className="spinner" style={styles.spinner} />
               </div>
             ) : companies.length > 0 ? (
               companies.map((company, index) => (
@@ -246,80 +169,33 @@ export function Searchbar({
                   onMouseEnter={() => setHoveredCompany(company.id.toString())}
                   onMouseLeave={() => setHoveredCompany(null)}
                   style={{
-                    padding: '0.5rem',
-                    cursor: 'pointer',
-                    borderRadius: '0.375rem',
-                    backgroundColor: selectedCompany?.id === company.id || hoveredCompany === company.id || focusedIndex === index ? '#F3F4F6' : 'transparent',
+                    ...styles.dropdownItem,
+                    backgroundColor: selectedCompany?.id === company.id || hoveredCompany === company.id || focusedIndex === index ? styles.dropdownItemHover.backgroundColor : 'transparent',
                     outline: focusedIndex === index ? `2px solid ${mainColor}` : 'none',
                   }}
-                  className="selected-business"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span
-                      style={{
-                        flexShrink: 0,
-                        position: 'relative',
-                        display: 'inline-block',
-                        width: '1.5rem',
-                        height: '1.5rem',
-                        borderRadius: '9999px',
-                        overflow: 'hidden',
-                        backgroundColor: '#F3F4F6',
-                        border: '1px solid rgba(0, 0, 0, 0.1)',
-                        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-                      }}
-                    >
+                  <div style={styles.companyInfo}>
+                    <span style={styles.companyLogo}>
                       {company.image && !imageErrors[company.id] ? (
                         <img
                           src={company.image}
                           alt={`${company.name} logo`}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          style={styles.companyImage}
                           onError={() => {
                             setImageErrors(prev => ({ ...prev, [company.id]: true }));
                           }}
                         />
                       ) : (
-                        <span
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            height: '100%',
-                            width: '100%',
-                            borderRadius: '9999px',
-                            backgroundColor: '#F3F4F6',
-                            fontSize: '0.75rem',
-                            fontWeight: '500',
-                            color: '#1F2937',
-                          }}
-                        >
+                        <span style={styles.companyInitials}>
                           {getInitials(company.name)}
                         </span>
                       )}
                     </span>
-                    <div style={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      overflow: 'hidden',
-                      flexGrow: 1,
-                    }}>
-                      <span style={{ 
-                        fontWeight: '500', 
-                        color: '#111827', 
-                        fontSize: '0.875rem',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}>
+                    <div style={styles.companyTextInfo}>
+                      <span style={styles.companyName}>
                         {company.name}
                       </span>
-                      <span style={{ 
-                        fontSize: '0.75rem', 
-                        color: '#6B7280', 
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}>
+                      <span style={styles.companyWebsite}>
                         {getDomainName(company.website)}
                       </span>
                     </div>
@@ -328,13 +204,7 @@ export function Searchbar({
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 20 20"
                         fill="currentColor"
-                        style={{ 
-                          width: '1.25rem', 
-                          height: '1.25rem', 
-                          color: mainColor, 
-                          marginLeft: 'auto',
-                          flexShrink: 0,
-                        }}
+                        style={styles.checkIcon}
                         aria-hidden="true"
                       >
                         <path
@@ -348,7 +218,7 @@ export function Searchbar({
                 </div>
               ))
             ) : (
-              <div style={{ padding: '0.75rem 1rem', textAlign: 'center', color: '#6B7280' }}>
+              <div style={styles.noResults}>
                 No results found
               </div>
             )}
@@ -356,6 +226,5 @@ export function Searchbar({
         </div>
       )}
     </div>
-    </>
   );
 }
