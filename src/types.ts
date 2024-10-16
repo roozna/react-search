@@ -5,14 +5,8 @@ export interface Employee {
 }
 
 export interface ApiResponse {
-    results: Company[]
-    pagination: {
-        currentPage: number
-        totalPages: number
-        totalHits: number
-        hitsPerPage: number
-        nextPage: number | null
-    }
+    results: Company[];
+    pagination: PaginationInfo;
 }
 
 export interface Company {
@@ -20,9 +14,11 @@ export interface Company {
     name: string;
     website: string;
     image: string;
-  }
-  
-  export type SearchbarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+    followers?: string;
+    cover_image?: string;
+}
+
+export type SearchbarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 export interface SearchbarStyles {
   container?: React.CSSProperties;
@@ -72,4 +68,14 @@ export interface SearchbarProps {
     theme?: ThemeMode;
     lightTheme?: Partial<Theme>;
     darkTheme?: Partial<Theme>;
+    alwaysOpen?: boolean;
+    infiniteScroll?: boolean;
+}
+
+export interface PaginationInfo {
+    currentPage: number;
+    totalPages: number;
+    totalHits: number;
+    hitsPerPage: number;
+    nextPage: number | null;
 }

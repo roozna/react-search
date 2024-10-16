@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, KeyboardEvent } from 'react';
-import { Company, SearchbarProps, SearchbarSize, SearchbarStyles, Theme, ThemeMode } from '../types';
+import { Company, SearchbarProps, SearchbarSize, SearchbarStyles, Theme, ThemeMode, PaginationInfo } from '../types';
 import { useSearchbar } from '../hooks/useSearchbar';
 import { searchCompanies } from '../utils/api';
 import './Searchbar.css';
@@ -56,6 +56,8 @@ export function Searchbar({
   width = '25rem',
   styles = {},
   openByDefault = false,
+  alwaysOpen = false,
+  infiniteScroll = false,
   theme: userTheme,
   lightTheme: userLightTheme = {},
   darkTheme: userDarkTheme = {}
@@ -67,18 +69,28 @@ export function Searchbar({
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [isFocused, setIsFocused] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const { 
     query, 
     setQuery, 
     setQueryWithoutFetch, 
     companies, 
+    setCompanies,
     loading, 
     selectedCompany, 
     setSelectedCompany,
     isOpen,
-    setIsOpen
+    setIsOpen,
+    pagination,
+    loadMoreResults
   } = useSearchbar(
-    (q: string) => searchCompanies(apiKey, q).then(response => response),
+    async (q: string, page: number = 1) => {
+      setIsLoadingMore(page > 1);
+      const response = await searchCompanies(apiKey, q, page);
+      setIsLoadingMore(false);
+      return response;
+    },
     2,
     300
   );
@@ -249,6 +261,28 @@ export function Searchbar({
     }
   `;
 
+  const handleReset = () => {
+    setQuery('');
+    setSelectedCompany(null);
+    setIsOpen(true);
+    inputRef.current?.focus();
+  };
+
+  useEffect(() => {
+    if (alwaysOpen) {
+      setIsOpen(true);
+    }
+  }, [alwaysOpen]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (!infiniteScroll || !pagination || loading || isLoadingMore) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight * 1.5) {
+      loadMoreResults();
+    }
+  };
+
   return (
     <div style={containerStyle}>
       <style>{spinnerStyle}</style>
@@ -295,7 +329,7 @@ export function Searchbar({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => {
-              setIsOpen(true);
+              if (!alwaysOpen) setIsOpen(true);
               setIsFocused(true);
             }}
             onBlur={() => setIsFocused(false)}
@@ -308,29 +342,52 @@ export function Searchbar({
             className={placeholderClass}
             style={inputStyle}
           />
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            style={{
-              width: '1.25rem',
-              height: '1.25rem',
-              color: theme.placeholderColor,
-              marginLeft: '0.5rem',
-              transform: isOpen ? 'rotate(180deg)' : 'none',
-              transition: 'transform 0.2s ease-in-out',
-            }}
-            aria-hidden="true"
-          >
-            <path
-              fillRule="evenodd"
-              d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-              clipRule="evenodd"
-            />
-          </svg>
+          {(query || selectedCompany) ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              style={{
+                width: '1.25rem',
+                height: '1.25rem',
+                color: theme.placeholderColor,
+                marginLeft: '0.5rem',
+                cursor: 'pointer',
+              }}
+              onClick={handleReset}
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                clipRule="evenodd"
+              />
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              style={{
+                width: '1.25rem',
+                height: '1.25rem',
+                color: theme.placeholderColor,
+                marginLeft: '0.5rem',
+                transform: isOpen ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.2s ease-in-out',
+              }}
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          )}
         </div>
       </div>
-      {isOpen && (
+      {(isOpen || alwaysOpen) && (
         <div
           style={{
             position: 'absolute',
@@ -358,125 +415,134 @@ export function Searchbar({
               padding: '0.375em',
               ...styles.dropdown
             }}
+            onScroll={handleScroll}
           >
             <div style={{ 
               padding: '0.375em', 
               position: 'relative',
               ...styles.dropdownInner 
             }}>
-              {loading ? (
+              {loading && !isLoadingMore ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '1em', ...styles.loadingContainer }}>
                   <div className="spinner" style={styles.spinner} />
                 </div>
               ) : companies.length > 0 ? (
-                companies.map((company, index) => (
-                  <div
-                    key={company.id}
-                    role="option"
-                    aria-selected={selectedCompany?.id === company.id}
-                    onClick={() => handleSelect(company)}
-                    onMouseEnter={() => setHoveredCompany(company.id.toString())}
-                    onMouseLeave={() => setHoveredCompany(null)}
-                    style={{
-                      ...dropdownItemStyle,
-                      backgroundColor: selectedCompany?.id === company.id || hoveredCompany === company.id || focusedIndex === index ? theme.hoverColor : 'transparent',
-                      outline: focusedIndex === index ? `2px solid ${mainColor}` : 'none',
-                    }}
-                    className="selected-business"
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5em', ...styles.companyInfo }}>
-                      <span
-                        style={{
-                          position: 'relative',
-                          display: 'inline-block',
-                          width: '1.5em',
-                          height: '1.5em',
-                          borderRadius: '9999px',
-                          overflow: 'hidden',
-                          backgroundColor: '#F3F4F6',
-                          border: '1px solid rgba(0, 0, 0, 0.1)',
-                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-                          flexShrink: 0,
-                          ...styles.companyLogo
-                        }}
-                      >
-                        {company.image && !imageErrors[company.id] ? (
-                          <img
-                            src={company.image}
-                            alt={`${company.name} logo`}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', ...styles.companyImage }}
-                            onError={() => {
-                              setImageErrors(prev => ({ ...prev, [company.id]: true }));
-                            }}
-                          />
-                        ) : (
-                          <span
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              height: '100%',
-                              width: '100%',
-                              borderRadius: '9999px',
-                              backgroundColor: '#F3F4F6',
-                              fontSize: '0.75rem',
-                              fontWeight: '500',
-                              color: '#1F2937',
-                              ...styles.companyInitials
-                            }}
-                          >
-                            {getInitials(company.name)}
-                          </span>
-                        )}
-                      </span>
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        overflow: 'hidden', 
-                        flexGrow: 1, 
-                        whiteSpace: 'nowrap',
-                        ...styles.companyTextInfo 
-                      }}>
-                        <span style={{ 
-                          fontWeight: '500', 
-                          color: theme.textColor, 
-                          marginRight: '0.5em',
-                          ...styles.companyName 
-                        }}>
-                          {company.name}
-                        </span>
-                        <span style={{ 
-                          color: isDarkMode ? '#9CA3AF' : '#6B7280', 
-                          ...styles.companyWebsite 
-                        }}>
-                          {getDomainName(company.website)}
-                        </span>
-                      </div>
-                      {(selectedCompany?.id === company.id || hoveredCompany === company.id.toString()) && (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                          style={{ 
-                            width: '1.25em', 
-                            height: '1.25em', 
-                            color: mainColor, 
-                            marginLeft: 'auto',
+                <>
+                  {companies.map((company, index) => (
+                    <div
+                      key={company.id}
+                      role="option"
+                      aria-selected={selectedCompany?.id === company.id}
+                      onClick={() => handleSelect(company)}
+                      onMouseEnter={() => setHoveredCompany(company.id.toString())}
+                      onMouseLeave={() => setHoveredCompany(null)}
+                      style={{
+                        ...dropdownItemStyle,
+                        backgroundColor: selectedCompany?.id === company.id || hoveredCompany === company.id || focusedIndex === index ? theme.hoverColor : 'transparent',
+                        outline: focusedIndex === index ? `2px solid ${mainColor}` : 'none',
+                      }}
+                      className="selected-business"
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5em', ...styles.companyInfo }}>
+                        <span
+                          style={{
+                            position: 'relative',
+                            display: 'inline-block',
+                            width: '1.5em',
+                            height: '1.5em',
+                            borderRadius: '9999px',
+                            overflow: 'hidden',
+                            backgroundColor: '#F3F4F6',
+                            border: '1px solid rgba(0, 0, 0, 0.1)',
+                            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
                             flexShrink: 0,
-                            ...styles.checkIcon 
+                            ...styles.companyLogo
                           }}
-                          aria-hidden="true"
                         >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
+                          {company.image && !imageErrors[company.id] ? (
+                            <img
+                              src={company.image}
+                              alt={`${company.name} logo`}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', ...styles.companyImage }}
+                              onError={() => {
+                                console.log('Error loading image for company:', company.id);
+                                setImageErrors(prev => ({ ...prev, [company.id]: true }));
+                              }}
+                            />
+                          ) : (
+                            <span
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '100%',
+                                width: '100%',
+                                borderRadius: '9999px',
+                                backgroundColor: '#F3F4F6',
+                                fontSize: '0.75rem',
+                                fontWeight: '500',
+                                color: '#1F2937',
+                                ...styles.companyInitials
+                              }}
+                            >
+                              {getInitials(company.name)}
+                            </span>
+                          )}
+                        </span>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          overflow: 'hidden', 
+                          flexGrow: 1, 
+                          whiteSpace: 'nowrap',
+                          ...styles.companyTextInfo 
+                        }}>
+                          <span style={{ 
+                            fontWeight: '500', 
+                            color: theme.textColor, 
+                            marginRight: '0.5em',
+                            ...styles.companyName 
+                          }}>
+                            {company.name}
+                          </span>
+                          <span style={{ 
+                            color: isDarkMode ? '#9CA3AF' : '#6B7280', 
+                            ...styles.companyWebsite 
+                          }}>
+                            {getDomainName(company.website)}
+                          </span>
+                        </div>
+                        {(selectedCompany?.id === company.id || hoveredCompany === company.id.toString()) && (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            style={{ 
+                              width: '1.25em', 
+                              height: '1.25em', 
+                              color: mainColor, 
+                              marginLeft: 'auto',
+                              flexShrink: 0,
+                              ...styles.checkIcon 
+                            }}
+                            aria-hidden="true"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                  {isLoadingMore && (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '1em', ...styles.loadingContainer }}>
+                      <div className="spinner" style={styles.spinner} />
+                    </div>
+                  )}
+                </>
               ) : (
                 <div style={{ padding: '0.75em 1em', textAlign: 'center', color: theme.textColor, ...styles.noResults }}>
                   No results found
